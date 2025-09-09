@@ -1,7 +1,7 @@
-name: Deploy MkDocs to GitHub Pages
+name: Build & Deploy MkDocs via GitHub Pages
 on:
   push:
-    branches: [ main ]   # 你的默认分支
+    branches: [ main ]
     paths:
       - 'mkdocs.yml'
       - 'docs/**'
@@ -10,12 +10,16 @@ on:
       - '**.jpg'
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +35,19 @@ jobs:
       - name: Build site
         run: mkdocs build --strict
 
-      - name: Deploy to gh-pages
-        run: mkdocs gh-deploy --force
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 关键：把 ./site 上传为名为 github-pages 的 artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
