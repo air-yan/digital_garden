@@ -1,0 +1,37 @@
+name: Deploy MkDocs to GitHub Pages
+on:
+  push:
+    branches: [ main ]   # 你的默认分支
+    paths:
+      - 'mkdocs.yml'
+      - 'docs/**'
+      - '**.md'
+      - '**.png'
+      - '**.jpg'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install MkDocs + Material
+        run: |
+          pip install mkdocs mkdocs-material
+
+      - name: Build site
+        run: mkdocs build --strict
+
+      - name: Deploy to gh-pages
+        run: mkdocs gh-deploy --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
