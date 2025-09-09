@@ -2,6 +2,8 @@ site_name: 子时说
 site_url: https://air-yan.github.io/digital_garden
 repo_url: https://github.com/air-yan/digital_garden
 
+docs_dir: docs
+
 theme:
   name: material   # 安装了 mkdocs-material 后可用
   language: zh
