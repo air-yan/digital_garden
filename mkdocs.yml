@@ -1,0 +1,21 @@
+site_name: 子时说
+site_url: https://air-yan.github.io/digital_garden
+repo_url: https://github.com/air-yan/digital_garden
+
+theme:
+  name: material   # 安装了 mkdocs-material 后可用
+  language: zh
+  features:
+    - navigation.instant
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.superfences
