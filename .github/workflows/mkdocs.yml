@@ -1,4 +1,5 @@
 name: Build & Deploy MkDocs via GitHub Pages
+
 on:
   push:
     branches: [ main ]
@@ -8,6 +9,7 @@ on:
       - '**.md'
       - '**.png'
       - '**.jpg'
+  workflow_dispatch: {}   # 允许手动触发一次
 
 permissions:
   contents: read
@@ -17,6 +19,10 @@ permissions:
 concurrency:
   group: "pages"
   cancel-in-progress: true
+
+env:
+  # 如果你的内容目录不是 docs，请改成实际目录名，比如 published
+  DOCS_DIR: docs
 
 jobs:
   build:
@@ -28,14 +34,38 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install MkDocs + Material
+      # 缓存 pip，构建更快（可选）
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install MkDocs + plugins
         run: |
-          pip install mkdocs mkdocs-material
+          pip install --upgrade pip
+          # Material 主题 + roamlinks 处理 [[wikilink]]
+          pip install mkdocs mkdocs-material mkdocs-roamlinks-plugin
+          # 可选：更好的图片灯箱/缩放体验（配合 glightbox 插件）
+          pip install mkdocs-glightbox
+
+      # 没有内容就直接失败，避免部署空站
+      - name: Sanity check: ensure markdown exists
+        run: |
+          set -e
+          FOUND=$(find "${DOCS_DIR}" -type f -name '*.md' | wc -l)
+          if [ "$FOUND" -eq 0 ]; then
+            echo "❌ No Markdown files found under ${DOCS_DIR}/"
+            exit 1
+          else
+            echo "✅ Found $FOUND Markdown files."
+          fi
 
       - name: Build site
         run: mkdocs build --strict
 
-      # 关键：把 ./site 上传为名为 github-pages 的 artifact
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
